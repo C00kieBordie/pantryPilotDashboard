@@ -7,11 +7,12 @@ import {
 } from 'vue-router';
 import routes from './routes';
 import { useAuthStore } from 'src/stores/auth-store';
+import { globalSupabase } from 'src/boot/supabase'
 
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean;
-    role?: 'admin' | 'user';
+    role?: 'Manager' | 'user';
   }
 }
 
@@ -28,22 +29,35 @@ export default defineRouter(function ({ store }) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore(store); 
-    console.log('Guard sees Token:', authStore.token);
-  console.log('Guard sees Status:', authStore.user?.status);
-    const isLoggedIn = authStore.token;
-    const userRole = authStore.user?.status || authStore.token;
+  Router.beforeEach(async (to, from, next) => {
+    const authStore = useAuthStore(store);
+    let localToken: string | null = null;
+    let localUserRole: string = 'user';
+    
+    if (!authStore.token) {
+      const { data: { session } } = await globalSupabase.auth.getSession();
+      if (session) {
+        localToken = session.access_token;
+        localUserRole = session.user?.user_metadata?.role || 'user'; 
+      }
+    }
+    const isLoggedIn = authStore.token || localToken;
+    const userRole = authStore.user?.status || localUserRole;
+
+    console.log('Guard sees Token:', isLoggedIn);
+    console.log('Guard sees Status/Role:', userRole);
 
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
     const requiredRole = to.meta.role;
 
     if (requiresAuth && !isLoggedIn) {
+      console.log('Not logged in. Redirecting to login.');
       next({ path: '/login' });
-    } else if (requiredRole === 'admin' && userRole !== 'admin') {
+    } else if (requiredRole === 'Manager' && userRole !== 'Manager') {
+      console.log('Not a Manager. Forwarded to user mode. Current role:', userRole);
       next({ path: '/' }); 
-      console.log('forwarded to user mode');
-      console.log(userRole);
+    } else if (to.path === '/login' && isLoggedIn) {
+      next({ path: userRole === 'Manager' ? '/admin' : '/' });
     } else {
       next();
     }

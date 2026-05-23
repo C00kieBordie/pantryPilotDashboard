@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 export interface User {
   id: number;
   email: string;
-  status: 'admin' | 'user';
+  status: 'Manager' | 'user';
   name?: string;
 }
 
