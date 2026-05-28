@@ -17,3 +17,6 @@ router.get('/active', inventoryController.getActiveInventory);
 
 // Route 4: GET request to fetch items requiring a manual date scan
 router.get('/pending-scans', inventoryController.getPendingScans);
+
+//retrieves activity logs
+router.get('/activity-log', inventoryController.getActivityLog);

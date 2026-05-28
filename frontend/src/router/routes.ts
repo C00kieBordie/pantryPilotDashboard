@@ -18,7 +18,9 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', component: () => import('pages/AdminDashboard.vue') },
       { path: 'InventoryManagement', component: () => import('pages/InventoryManagement.vue') },
-      { path: 'AvtivityLog', component: () => import('pages/ActivityLog.vue') },
+      { path: 'ActivityLog', component: () => import('pages/ActivityLog.vue') },
+      { path: 'UserCenter', component: () => import('pages/UserCenter.vue') },
+
     ]
   },
   {

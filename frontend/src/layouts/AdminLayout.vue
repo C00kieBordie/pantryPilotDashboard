@@ -17,7 +17,12 @@ const linksList: EssentialLinkProps[] = [
   {
     title: 'Activities Logs',
     icon: 'history',
-    link: '/admin/check_dashboard',
+    link: '/admin/ActivityLog',
+  },
+  {
+    title: 'User Center',
+    icon: 'person',
+    link: '/admin/UserCenter',
   },
   {
     title: 'Dashboard',

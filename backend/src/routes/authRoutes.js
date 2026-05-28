@@ -3,16 +3,16 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 
-// 1. Existing Workspace Lookup
-router.get('/lookup', authController.lookupWorkspace);
-
-// 2. NEW: Fetch all users for the Flutter "Netflix" profile screen
-router.get('/users', authController.getUsers);
-
-// 3. NEW: Verify the PIN from the Flutter numpad
+router.get('/lookup',      authController.lookupWorkspace);
 router.post('/verify-pin', authController.login);
+router.post('/login',      authController.login);
 
-// 4. (Optional) Keeping your original login route active just in case
-router.post('/login', authController.login);
+// User management — specific routes BEFORE parametric ones
+router.get('/users/all',                     authController.getAllUsers);
+router.post('/users/create',                 authController.createUser);
+router.put('/users/:user_id/pin',            authController.changePin);
+router.put('/users/:user_id/toggle-active',  authController.toggleUserActive);
+
+router.get('/users', authController.getUsers);
 
 module.exports = router;

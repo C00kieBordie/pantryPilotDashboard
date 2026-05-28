@@ -4,8 +4,7 @@
   import InventoryItemCard from 'components/InventoryItemCard.vue';
 
   const store = useInventoryStore();
-  let result = store.items;
-
+  
   type FilterKey = 'all' | 'valid' | 'expired' | 'manual';
   const filter = ref<FilterKey>('all');
   const search = ref('');

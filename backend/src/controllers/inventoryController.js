@@ -178,3 +178,29 @@ exports.getPendingScans = async (req, res) => {
         return res.status(500).json({ error: "Failed to fetch pending scans.", details: error.message });
     }
 };
+
+exports.getActivityLog = async (req, res) => {
+  try {
+    const { data, error } = await tenantSupabase
+      .from('inventory_activity_log')
+      .select(`
+        log_id,
+        action_type,
+        logged_at,
+        inventory_batches (
+          batch_id,
+          inventory_items ( name )
+        ),
+        users ( username )
+      `)
+      .order('logged_at', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    return res.status(200).json({ log: data });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch activity log.', details: error.message });
+  }
+};
+
