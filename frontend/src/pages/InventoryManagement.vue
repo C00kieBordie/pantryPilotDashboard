@@ -1,352 +1,151 @@
 <script setup lang="ts">
-  import {ref, onMounted} from 'vue';
-  import type { QTableProps } from 'quasar';
+  import { onMounted, computed, ref } from 'vue';
+  import { useInventoryStore } from 'src/stores/InventoryStore';
+  import InventoryItemCard from 'components/InventoryItemCard.vue';
 
-  interface BookRow {
-    ID: number;
-    title: string;
-    author: string;
-    authorID?: number; 
-    status: string;
-    qty: number;
-    imgSrc?: string;
-  }
-  interface AuthorRow {
-    ID: number;
-    authorName: string;
-  }
+  const store = useInventoryStore();
+  let result = store.items;
 
-  const bookName = ref('');
-  const authName = ref('');
-  const inputAuthID = ref();
-  const status = ref('');
-  const quantity = ref(0);
-  const bookID = ref();
+  type FilterKey = 'all' | 'valid' | 'expired' | 'manual';
+  const filter = ref<FilterKey>('all');
+  const search = ref('');
+  onMounted(() => store.fetchItems());
+  const filteredItems = computed(() => {
+    let result = store.items;
 
-  const bookRows = ref([]);
-  const authRows = ref([]);
-  const loading = ref(false);
-  const fetched = ref(false);
-  const tabName = ref('books');
-function onBooksRowClick(evt: Event, row: BookRow) {
-  bookID.value = row.ID;
-  bookName.value = row.title;
-  authName.value = row.author;
-  
-  inputAuthID.value = row.authorID || row.ID; 
-  
-  status.value = row.status;
-  quantity.value = row.qty;
-  fetched.value = true;
-}
-async function onAuthorRowClick(evt: Event, row: AuthorRow) {
-    loading.value = true;
-    try{
-      const response = await fetch('http://localhost:3000/api/searchBookByID', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            authorID: row.ID,
-        })
-      });
-      const data = await response.json();
-      if(data.ok){
-        bookRows.value = data.books.result;
-        tabName.value = 'books';
-        alert(data.message);
-      }else{
-        alert('Author has no books.')
-      }
-    }catch(error){
-      console.error("Database connection failed", error);
-    }finally{
-      loading.value = false;
+    // Apply tab filter
+    switch (filter.value) {
+      case 'valid':   result = result.filter(i => i.is_valid === true); break;
+      case 'expired': result = result.filter(i => i.is_valid === false); break;
+      case 'manual':  result = result.filter(i => i.requires_manual_expiry); break;
     }
-}
-const options = [
-        'avaialable', 'out of stock', 'in progress'
-      ];
 
-  const bookCol: QTableProps['columns'] = [
-    { name: 'book_ID', label: 'ID', field: 'ID', align: 'left' },
-    { name: 'book_name', label: 'Book Name', field: 'title', align: 'left' },
-    { name: 'author', label: 'Author', field: 'author', align: 'left' },
-    { name: 'status', label: 'Status', field: 'status', align: 'left' },
-    { name: 'qty', label: 'Quantity', field: 'qty', align: 'left' },
-  ];
-  const authCol: QTableProps['columns'] = [
-    { name: 'auth_ID', label: 'Author ID', field: 'ID', align: 'left'},
-    { name: 'author', label: 'Author Name', field: 'authorName', align: 'left'},
-  ];
+    // Apply search filter
+    if (search.value.trim()) {
+      const q = search.value.toLowerCase();
+      result = result.filter(i =>
+        i.inventory_items?.name?.toLowerCase().includes(q)
+      );
+    }
 
-  async function getIdentifier(){
-    try {
-    const response = await fetch(
-      `https://openlibrary.org/search.json?title=${encodeURIComponent(bookName.value)}&author=${encodeURIComponent(authName.value)}`
-    );
-    const data = await response.json();
-
-    const firstBook = data.docs.find((doc: { cover_i: number }) => doc.cover_i);
-
-    return firstBook ? firstBook.cover_i : null;
-  } catch (error) {
-    console.error("Error fetching cover:", error);
-    return 'https://via.placeholder.com/150?text=Error';
-  }
-  }
-
-  async function fillBooksTable(){
-    loading.value = true;
-    try {
-        const response = await fetch('http://localhost:3000/api/getBooks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        const data = await response.json();
-        if(data.ok){
-          bookRows.value = data.books.result;
-          console.log(data);
-        }else{
-          alert('Failed to fetch books.')
-        }
-      }
-    catch (error) {
-      console.error("Database connection failed", error);
-    }finally{
-      loading.value = false;
-    }
-  }
-  async function fillAuthorsTable(){
-    loading.value = true;
-    try {
-        const response = await fetch('http://localhost:3000/api/getAuthors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        const data = await response.json();
-        if(data.ok){
-          authRows.value = data.books.result;
-          console.log(data);
-        }else{
-          alert('Failed to fetch books.')
-        }
-      }
-    catch (error) {
-      console.error("Database connection failed", error);
-    }finally{
-      loading.value = false;
-    }
-  }
-  async function addBook(){
-    if(inputAuthID.value < 1 || bookName.value === '' || status.value === '' || quantity.value < 0){
-      return;
-    }
-    try {
-      const identifier = await getIdentifier();
-      const response = await fetch('http://localhost:3000/api/addBook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-                    author: inputAuthID.value, 
-                    title: bookName.value,
-                    bookIdentifier: identifier,
-                    status: status.value,
-                    qty: quantity.value,
-        }),
-      });
-
-      const data = await response.json();
-      if(data.ok){
-        console.log(data.message);
-        await fillBooksTable();
-      }else{
-        alert(data.message);
-      }
-    }
-    catch (error) {
-      console.error("Database connection failed", error);
-    }
-  }
-  async function addAuth(){
-    if(authName.value === ''){
-      alert('Empty field');
-      return;
-    }
-    try{
-      const response = await fetch('http://localhost:3000/api/addAuthor', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            authorName: authName.value,
-        })
-      });
-      const data = await response.json();
-      if(data.ok){
-        alert(data.message);
-      }
-    }catch(error){
-      console.error("Database connection failed", error);
-    }
-  }
-  async function searchBook(){
-    loading.value = true;
-
-    try{
-      const response = await fetch('http://localhost:3000/api/searchBook', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            bookName: bookName.value,
-        })
-      });
-      const data = await response.json();
-      if(data.ok){
-        bookRows.value = data.books.result;
-        console.log(data);
-      }else{
-        alert('Failed to fetch books.')
-      }
-    }catch(error){
-      console.error("Database connection failed", error);
-    }finally{
-      loading.value = false;
-    }
-  }
-  async function deleteBook(){
-    try{
-      const response = await fetch('http://localhost:3000/api/deleteBook', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            bookID: bookName.value,
-        })
-      });
-      const data = await response.json();
-      if(data.ok){
-        console.log('Book Successfuly deleted!');
-        await fillBooksTable();
-      }else{
-        alert('Failed to fetch books.')
-      }
-    }catch(error){
-      console.error("Database connection failed", error);
-    }
-  }
-  async function editBook(){
-    if(!fetched.value){
-      alert('Please fetch Books first...')
-      return;
-    }
-    try{
-      const response = await fetch('http://localhost:3000/api/editBook', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-                    bookID: bookID.value,
-                    title: bookName.value,
-                    authorID: inputAuthID.value,
-                    status: status.value,
-                    qty: quantity.value,
-        })
-      });
-      const data = await response.json();
-      if(data.ok){
-        alert(data.message);
-      }
-    }catch(err){
-      console.error("Database connection failed", err);
-    }finally{
-      fetched.value = false;
-      await fillBooksTable();
-  }
-  }
-  
-  onMounted(async () => {
-      await fillBooksTable();
-      await fillAuthorsTable();
+    return result;
   });
+  const counts = computed(() => ({
+    all:     store.items.length,
+    valid:   store.items.filter(i => i.is_valid === true).length,
+    expired: store.items.filter(i => i.is_valid === false).length,
+    manual:  store.items.filter(i => i.requires_manual_expiry).length,
+  }));
+
+  const filters: { key: FilterKey; label: string; activeClass: string }[] = [
+    { key: 'all',     label: 'All',     activeClass: 'bg-white text-[#629FAD] shadow-sm' },
+    { key: 'valid',   label: 'Valid',   activeClass: 'bg-green-500 text-white shadow-sm' },
+    { key: 'expired', label: 'Expired', activeClass: 'bg-red-500 text-white shadow-sm' },
+    { key: 'manual',  label: 'Manual',  activeClass: 'bg-amber-400 text-white shadow-sm' },
+  ];
 </script>
 
 <template>
-  <q-page class="h-screen overflow-hidden flex flex-col p-4">
-    
-    <div class="row q-col-gutter-md grow no-wrap">
-      
-      <div class="col-5 flex flex-col">
-        <q-card class="full-width grow p-6 flex flex-col shadow-lg">
-          <div class="text-h6 mb-4">Book Details</div>
-          
-          <div class="space-y-4">
-            <q-input v-model="bookName" label="Book Name" stack-label outlined />
-            <q-input v-model="authName" label="Author Name" stack-label outlined />
-            <q-input v-model.number="inputAuthID" label="Author ID" stack-label outlined />
-            
-            <q-select 
-              rounded 
-              outlined 
-              v-model="status" 
-              :options="options" 
-              label="Inventory Status" 
-            />
-            
-            <q-input v-model.number="quantity" label="Quantity" stack-label outlined />
-          </div>
-          <q-btn color="primary" icon="person_add" label="Add author" @click="addAuth" class="mt-4 q-col-gutter-md" />
-          <q-btn color="primary" icon="view_list" label="Show all Books" @click="fillBooksTable" class="mt-4 q-col-gutter-md" />
+  <q-page class="min-h-screen px-6 py-6">
 
-          <div class="grid grid-cols-2 gap-4 mt-6">
-            <q-btn color="primary" icon="search" label="Search for Book" @click="searchBook"/>
-            <q-btn color="primary" icon="save" label="Add Book" @click="addBook" />
-            <q-btn color="primary" icon="delete" label="Delete Book" @click="deleteBook"/>
-            <q-btn color="primary" icon="edit" label="Edit Book" @click="editBook"/>
-          </div>
-          
-        </q-card>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">Inventory Batches</h1>
+        <p class="text-sm text-white/60 mt-0.5">{{ store.items.length }} total batches tracked</p>
       </div>
+      <button
+        @click="store.fetchItems()"
+        :disabled="store.loading"
+        class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-150 disabled:opacity-50"
+      >
+        <span :class="['material-icons text-sm', store.loading ? 'animate-spin' : '']">refresh</span>
+        Refresh
+      </button>
+    </div>
 
-      <div class="col-7 flex flex-col">
-        <q-card class="full-width grow p-2 shadow-lg bg-grey-1">
-          <q-tabs>
-            <q-tab name="books" @click="tabName = 'books'" label="Books"/>
-            <q-tab name="authors" @click="tabName = 'authors'" label="Authors"/>
-          </q-tabs>
-          <q-separator />
-
-          <q-tab-panels v-model="tabName" animated class="bg-transparent">
-            <q-tab-panel name="books">
-              <div class="q-pa-md">
-                  <q-table
-                    class="my-sticky-header-table"
-                    flat bordered
-                    title="Library Records"
-                    :rows="bookRows"
-                    :columns="bookCol"
-                    :loading="loading"
-                    row-key="id" 
-                    @row-click="onBooksRowClick"
-                  />
-              </div>
-            </q-tab-panel>
-              <q-tab-panel name="authors" class="q-gutter-y-md q-pa-lg">
-                <div class="q-pa-md">
-                  <q-table
-                    class="my-sticky-header-table"
-                    flat bordered
-                    title="Library Records"
-                    :rows="authRows"
-                    :columns="authCol"
-                    :loading="loading"
-                    row-key="id" 
-                    @row-click="onAuthorRowClick"
-                  />
-                </div>
-              </q-tab-panel>
-          </q-tab-panels>
-        </q-card>
+    <!-- Summary Pills -->
+    <div class="flex flex-wrap gap-3 mb-6">
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center">
+        <p class="text-xs text-white/60">Total</p>
+        <p class="text-lg font-bold text-white">{{ counts.all }}</p>
+      </div>
+      <div class="bg-green-500/20 rounded-xl px-4 py-2 text-center">
+        <p class="text-xs text-green-200">Valid</p>
+        <p class="text-lg font-bold text-green-300">{{ counts.valid }}</p>
+      </div>
+      <div class="bg-red-500/20 rounded-xl px-4 py-2 text-center">
+        <p class="text-xs text-red-200">Expired</p>
+        <p class="text-lg font-bold text-red-300">{{ counts.expired }}</p>
+      </div>
+      <div class="bg-amber-400/20 rounded-xl px-4 py-2 text-center">
+        <p class="text-xs text-amber-200">Manual</p>
+        <p class="text-lg font-bold text-amber-300">{{ counts.manual }}</p>
       </div>
     </div>
+
+    <!-- Filter Tabs -->
+    <div class="flex gap-2 flex-wrap mb-6 bg-white/10 p-1 rounded-2xl w-fit">
+      <button
+        v-for="f in filters"
+        :key="f.key"
+        @click="filter = f.key"
+        :class="[
+          'px-4 py-1.5 rounded-xl text-sm font-medium transition-all duration-150',
+          filter === f.key ? f.activeClass : 'text-white/70 hover:text-white'
+        ]"
+      >
+        {{ f.label }} ({{ counts[f.key] }})
+      </button>
+    </div>
+    <div class="relative mb-4">
+          <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">search</span>
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Search by item name..."
+            class="w-full bg-white/10 text-white placeholder-white/40 text-sm pl-9 pr-4 py-2.5 rounded-xl border border-white/10 focus:outline-none focus:border-white/30 transition-all"
+          />
+          <button
+            v-if="search"
+            @click="search = ''"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+          >
+            <span class="material-icons text-sm">close</span>
+          </button>
+    </div>
+    <!-- Loading -->
+    <div v-if="store.loading" class="flex flex-col items-center justify-center gap-4 py-24">
+      <div class="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+      <p class="text-white/70 text-sm">Loading inventory...</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="store.error" class="flex flex-col items-center justify-center gap-3 py-24">
+      <span class="material-icons text-red-300 text-5xl">error_outline</span>
+      <p class="text-white/70 text-sm">{{ store.error }}</p>
+      <button
+        @click="store.fetchItems()"
+        class="text-sm text-white underline underline-offset-2 hover:text-white/80"
+      >
+        Try again
+      </button>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="filteredItems.length === 0" class="flex flex-col items-center justify-center gap-3 py-24">
+      <span class="material-icons text-white/40 text-5xl">inventory</span>
+      <p class="text-white/60 text-sm">No items match this filter</p>
+    </div>
+
+    <!-- Grid -->
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <InventoryItemCard
+        v-for="item in filteredItems"
+        :key="item.batch_id"
+        :item="item"
+      />
+    </div>
+
   </q-page>
 </template>
-

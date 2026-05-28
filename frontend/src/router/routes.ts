@@ -17,6 +17,8 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
     children: [
       { path: '', component: () => import('pages/AdminDashboard.vue') },
+      { path: 'InventoryManagement', component: () => import('pages/InventoryManagement.vue') },
+      { path: 'AvtivityLog', component: () => import('pages/ActivityLog.vue') },
     ]
   },
   {

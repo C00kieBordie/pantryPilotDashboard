@@ -8,15 +8,21 @@ const authStore = useAuthStore();
 
 const $q = useQuasar();
 const linksList: EssentialLinkProps[] = [
+  
+  {
+    title: 'Manage Inventory',
+    icon: 'receipt_long',
+    link: '/admin/InventoryManagement',
+  },
+  {
+    title: 'Activities Logs',
+    icon: 'history',
+    link: '/admin/check_dashboard',
+  },
   {
     title: 'Dashboard',
     icon: 'public',
     link: '/admin/check_dashboard',
-  },
-  {
-    title: 'Manage Inventory',
-    icon: 'public',
-    link: '/admin/manage_inventory',
   },
 ];
 
@@ -44,7 +50,7 @@ function logout(){
     <q-header elevated>
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-        <q-toolbar-title> Hidden Archive </q-toolbar-title>
+        <q-toolbar-title> Pantry Pilot </q-toolbar-title>
         <q-btn flat round dense icon="logout" v-if="authStore.token" @click="logout"/>
         
       </q-toolbar>
