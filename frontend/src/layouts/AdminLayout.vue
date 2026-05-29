@@ -11,7 +11,7 @@ const linksList: EssentialLinkProps[] = [
   {
     title: 'Dashboard',
     icon: 'public',
-    link: '/admin/AdminDashboard',
+    link: '/admin/',
   },
   {
     title: 'Manage Inventory',

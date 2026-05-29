@@ -14,6 +14,7 @@ export interface InventoryBatch {
   expiration_source: string | null;
   logged_at: string;
   requires_manual_expiry: boolean;
+  status: 'available' | 'consumed' | 'expired';
   is_valid: boolean | null;
   days_remaining: number | null;
   inventory_items?: {
@@ -35,10 +36,7 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null;
       try {
         const response = await fetch(`${BACKEND_URL}/api/inventory/active`);
-
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
         const json = await response.json();
 
@@ -54,11 +52,7 @@ export const useInventoryStore = defineStore('inventory', {
           const diffMs = expiry.getTime() - today.getTime();
           const days_remaining = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-          return {
-            ...item,
-            is_valid: days_remaining >= 0,
-            days_remaining,
-          };
+          return { ...item, is_valid: days_remaining >= 0, days_remaining };
         });
 
       } catch (err: unknown) {
@@ -66,6 +60,34 @@ export const useInventoryStore = defineStore('inventory', {
       } finally {
         this.loading = false;
       }
+    },
+
+    async deleteBatch(batch_id: string) {
+      const response = await fetch(`${BACKEND_URL}/api/inventory/batch/${batch_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qty_remaining: 0 }),
+      });
+      if (!response.ok) throw new Error('Failed to mark as consumed');
+      this.items = this.items.filter(i => i.batch_id !== batch_id);
+    },
+
+    async updateBatch(
+      batch_id: string,
+      payload: {
+        qty_remaining?: number;
+        unit_cost?: number;
+        expiration_date?: string | null;
+        user_id?: string | null;
+      }
+    ) {
+      const response = await fetch(`${BACKEND_URL}/api/inventory/batch/${batch_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update batch');
+      await this.fetchItems();
     },
   },
 });

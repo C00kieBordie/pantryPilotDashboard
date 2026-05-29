@@ -260,3 +260,53 @@ function getMs(range) {
   if (range === 'year')  return 365 * 24 * 60 * 60 * 1000;
   return 30 * 24 * 60 * 60 * 1000; // month
 }
+
+exports.updateBatch = async (req, res) => {
+  try {
+    const { batch_id } = req.params;
+    const { qty_remaining, unit_cost, expiration_date, user_id } = req.body;
+
+    const { data: current, error: fetchError } = await tenantSupabase
+      .from('inventory_batches')
+      .select('qty_remaining, unit_cost, expiration_date')
+      .eq('batch_id', batch_id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const status = qty_remaining === 0 ? 'consumed' : 'available';
+
+    const { data, error } = await tenantSupabase
+      .from('inventory_batches')
+      .update({ qty_remaining, unit_cost, expiration_date, status })
+      .eq('batch_id', batch_id)
+      .select('batch_id, qty_remaining, unit_cost, expiration_date')
+      .single();
+
+    if (error) throw error;
+
+    const changes = [];
+    if (current.qty_remaining !== qty_remaining)
+      changes.push(`qty: ${current.qty_remaining} → ${qty_remaining}`);
+    if (parseFloat(current.unit_cost) !== parseFloat(unit_cost))
+      changes.push(`cost: $${current.unit_cost} → $${unit_cost}`);
+    if (current.expiration_date !== expiration_date)
+      changes.push(`expiry: ${current.expiration_date ?? 'none'} → ${expiration_date ?? 'none'}`);
+
+    if (changes.length > 0) {
+      await tenantSupabase
+        .from('inventory_activity_log')
+        .insert([{
+          batch_id,
+          user_id:        user_id ?? null,
+          action_type:    'updated',
+          change_summary: changes.join(' | '),
+        }]);
+    }
+
+    return res.status(200).json({ message: 'Batch updated successfully.', batch: data });
+  } catch (error) {
+    console.error('Update Batch Error:', error);
+    return res.status(500).json({ error: 'Failed to update batch.', details: error.message });
+  }
+};
