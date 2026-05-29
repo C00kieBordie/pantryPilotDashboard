@@ -204,3 +204,59 @@ exports.getActivityLog = async (req, res) => {
   }
 };
 
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const { range } = req.query;
+
+    let interval;
+    if (range === 'week')  interval = '7 days';
+    else if (range === 'year') interval = '1 year';
+    else interval = '1 month';
+
+    const spendingResult = await tenantSupabase.rpc ? null : null;
+
+    const { data: invoices, error: invoiceError } = await tenantSupabase
+      .from('invoices')
+      .select('scanned_at, total_amount')
+      .gte('scanned_at', new Date(Date.now() - getMs(range)).toISOString())
+      .order('scanned_at', { ascending: true });
+
+    if (invoiceError) throw invoiceError;
+
+    const { data: expiredBatches, error: expiredError } = await tenantSupabase
+      .from('inventory_batches')
+      .select(`
+        unit_cost,
+        qty_remaining,
+        expiration_date,
+        logged_at,
+        inventory_items ( name )
+      `)
+      .lt('expiration_date', new Date().toISOString().split('T')[0])
+      .gt('qty_remaining', 0)
+      .eq('status', 'available')
+      .order('expiration_date', { ascending: true });
+
+    if (expiredError) throw expiredError;
+
+    const totalSpent = invoices.reduce((sum, i) => sum + parseFloat(i.total_amount || 0), 0);
+    const totalLost  = expiredBatches.reduce((sum, b) => sum + (parseFloat(b.unit_cost || 0) * b.qty_remaining), 0);
+
+    return res.status(200).json({
+      totalSpent,
+      totalLost,
+      invoices,
+      expiredBatches,
+    });
+
+  } catch (error) {
+    console.error('Dashboard Stats Error:', error);
+    return res.status(500).json({ error: 'Failed to fetch dashboard stats.', details: error.message });
+  }
+};
+
+function getMs(range) {
+  if (range === 'week')  return 7  * 24 * 60 * 60 * 1000;
+  if (range === 'year')  return 365 * 24 * 60 * 60 * 1000;
+  return 30 * 24 * 60 * 60 * 1000; // month
+}

@@ -20,3 +20,5 @@ router.get('/pending-scans', inventoryController.getPendingScans);
 
 //retrieves activity logs
 router.get('/activity-log', inventoryController.getActivityLog);
+
+router.get('/dashboard', inventoryController.getDashboardStats);

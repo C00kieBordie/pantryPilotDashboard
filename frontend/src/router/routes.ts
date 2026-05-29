@@ -16,7 +16,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/AdminLayout.vue'), 
     meta: { requiresAuth: true },
     children: [
-      { path: '', component: () => import('pages/AdminDashboard.vue') },
+      { path: 'AdminDashboard', component: () => import('pages/AdminDashboard.vue') },
       { path: 'InventoryManagement', component: () => import('pages/InventoryManagement.vue') },
       { path: 'ActivityLog', component: () => import('pages/ActivityLog.vue') },
       { path: 'UserCenter', component: () => import('pages/UserCenter.vue') },

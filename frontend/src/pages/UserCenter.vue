@@ -33,9 +33,9 @@ async function submitCreate() {
   creating.value = true;
   createErr.value = null;
   try {
-    await store.createUser(createForm.value); // now has pin instead of password
+    await store.createUser(createForm.value);
     showCreate.value = false;
-    createForm.value = { username: '', pin: '', role: 'staff' }; // ← reset with pin
+    createForm.value = { username: '', pin: '', role: 'staff' };
   } catch (err: unknown) {
     createErr.value = err instanceof Error ? err.message : 'Failed to create user';
   } finally {
@@ -216,8 +216,8 @@ function formatDate(ts: string) {
               v-model="createForm.role"
               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-[#629FAD] transition-all"
             >
-              <option value="staff">Staff</option>
-              <option value="manager">Manager</option>
+              <option value="Staff">Staff</option>
+              <option value="Manager">Manager</option>
             </select>
           </div>
         </div>

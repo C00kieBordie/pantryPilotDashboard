@@ -107,16 +107,6 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ error: 'PIN must be at least 4 digits.' });
     }
 
-    // Check if username already exists
-    const existing = await tenantPool.query(
-      'SELECT user_id FROM users WHERE username = $1',
-      [username]
-    );
-
-    if (existing.rows.length > 0) {
-      return res.status(409).json({ error: 'Username already exists.' });
-    }
-
     // Hash the PIN the same way login expects it
     const pin_hash = await bcrypt.hash(pin, 10);
 

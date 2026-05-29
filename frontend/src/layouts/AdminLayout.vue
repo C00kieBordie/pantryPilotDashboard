@@ -8,7 +8,11 @@ const authStore = useAuthStore();
 
 const $q = useQuasar();
 const linksList: EssentialLinkProps[] = [
-  
+  {
+    title: 'Dashboard',
+    icon: 'public',
+    link: '/admin/AdminDashboard',
+  },
   {
     title: 'Manage Inventory',
     icon: 'receipt_long',
@@ -23,11 +27,6 @@ const linksList: EssentialLinkProps[] = [
     title: 'User Center',
     icon: 'person',
     link: '/admin/UserCenter',
-  },
-  {
-    title: 'Dashboard',
-    icon: 'public',
-    link: '/admin/check_dashboard',
   },
 ];
 
