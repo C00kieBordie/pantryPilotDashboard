@@ -185,7 +185,8 @@ exports.getActivityLog = async (req, res) => {
       .from('inventory_activity_log')
       .select(`
         log_id,
-        action_type,
+        action,
+        details,
         logged_at,
         inventory_batches (
           batch_id,
@@ -266,6 +267,7 @@ exports.updateBatch = async (req, res) => {
     const { batch_id } = req.params;
     const { qty_remaining, unit_cost, expiration_date, user_id } = req.body;
 
+    // Fetch current values before update
     const { data: current, error: fetchError } = await tenantSupabase
       .from('inventory_batches')
       .select('qty_remaining, unit_cost, expiration_date')
@@ -285,23 +287,42 @@ exports.updateBatch = async (req, res) => {
 
     if (error) throw error;
 
-    const changes = [];
-    if (current.qty_remaining !== qty_remaining)
-      changes.push(`qty: ${current.qty_remaining} → ${qty_remaining}`);
-    if (parseFloat(current.unit_cost) !== parseFloat(unit_cost))
-      changes.push(`cost: $${current.unit_cost} → $${unit_cost}`);
-    if (current.expiration_date !== expiration_date)
-      changes.push(`expiry: ${current.expiration_date ?? 'none'} → ${expiration_date ?? 'none'}`);
+    // Build one log entry per changed field
+    const logs = [];
 
-    if (changes.length > 0) {
-      await tenantSupabase
+    if (Number(current.qty_remaining) !== Number(qty_remaining)) {
+      logs.push({
+        batch_id,
+        user_id:        user_id ?? null,
+        action_type:    qty_remaining === 0 ? 'batch_consumed' : 'qty_updated',
+        change_summary: `qty: ${current.qty_remaining} → ${qty_remaining}`,
+      });
+    }
+
+    if (parseFloat(current.unit_cost) !== parseFloat(unit_cost)) {
+      logs.push({
+        batch_id,
+        user_id:        user_id ?? null,
+        action_type:    'cost_updated',
+        change_summary: `cost: $${current.unit_cost} → $${unit_cost}`,
+      });
+    }
+
+    if (current.expiration_date !== expiration_date) {
+      logs.push({
+        batch_id,
+        user_id:        user_id ?? null,
+        action_type:    'expiry_updated',
+        change_summary: `expiry: ${current.expiration_date ?? 'none'} → ${expiration_date ?? 'none'}`,
+      });
+    }
+
+    if (logs.length > 0) {
+      const { error: logError } = await tenantSupabase
         .from('inventory_activity_log')
-        .insert([{
-          batch_id,
-          user_id:        user_id ?? null,
-          action_type:    'updated',
-          change_summary: changes.join(' | '),
-        }]);
+        .insert(logs);
+
+      if (logError) console.error('Activity log insert error:', logError.message);
     }
 
     return res.status(200).json({ message: 'Batch updated successfully.', batch: data });

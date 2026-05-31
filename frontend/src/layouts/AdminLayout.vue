@@ -10,7 +10,7 @@ const $q = useQuasar();
 const linksList: EssentialLinkProps[] = [
   {
     title: 'Dashboard',
-    icon: 'public',
+    icon: 'query_stats',
     link: '/admin/',
   },
   {
@@ -37,7 +37,6 @@ function toggleLeftDrawer() {
 }
 function logout(){
   authStore.logout();
-  $q.cookies.remove('librarySession');
   $q.cookies.remove('userProfile');
 
   window.location.href = '/login';  

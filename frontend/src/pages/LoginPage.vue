@@ -62,10 +62,7 @@
                 // Save active session data to store and cookies
                 authStore.login(data.user, data.token || 'session-active');
                 
-                $q.cookies.set('librarySession', data.token || 'session-active', {
-                    expires: '1d',
-                    path: '/',
-                });
+                
                 $q.cookies.set('userProfile', data.user, { expires: '1d' });
 
                 // Route redirection based on role rules
@@ -109,8 +106,7 @@
                         v-model="password" 
                         label="Password:" 
                         type="password" 
-                        stack-label 
-                        autocomplete="current-password"
+                        stack-label
                         @keyup.enter="login"
                     />
                     <q-btn 

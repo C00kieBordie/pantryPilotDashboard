@@ -4,7 +4,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 export interface ActivityLog {
   log_id: string;
-  action_type: string;
+  action: string;
+  details: string | null;  // ← add this
   logged_at: string;
   inventory_batches: {
     batch_id: string;

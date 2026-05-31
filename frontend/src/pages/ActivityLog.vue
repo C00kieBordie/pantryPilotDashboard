@@ -34,7 +34,7 @@
     return store.logs.filter(log =>
         log.inventory_batches?.inventory_items?.name?.toLowerCase().includes(q) ||
         log.users?.username?.toLowerCase().includes(q) ||
-        log.action_type?.toLowerCase().includes(q)
+        log.action?.toLowerCase().includes(q)
     );
     });
 </script>
@@ -111,9 +111,9 @@
           >
             <!-- Action badge -->
             <td class="px-5 py-3.5">
-              <span :class="['inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full', getMeta(log.action_type).bg, getMeta(log.action_type).text]">
-                <span class="material-icons text-xs">{{ getMeta(log.action_type).icon }}</span>
-                {{ getMeta(log.action_type).label }}
+              <span :class="['inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full', getMeta(log.action).bg, getMeta(log.action).text]">
+                <span class="material-icons text-xs">{{ getMeta(log.action).icon }}</span>
+                {{ getMeta(log.action).label }}
               </span>
             </td>
 
@@ -135,6 +135,12 @@
                 </div>
                 <span class="text-gray-600">{{ log.users?.username ?? 'Unknown' }}</span>
               </div>
+            </td>
+            <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Changes</th>
+
+            <!-- Add this column cell inside the v-for row -->
+            <td class="px-5 py-3.5 text-xs text-gray-500 font-mono">
+              {{ log.details ?? '—' }}
             </td>
 
             <!-- Timestamp -->

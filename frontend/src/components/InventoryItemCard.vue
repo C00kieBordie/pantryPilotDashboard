@@ -26,12 +26,12 @@ function openEdit() {
     unit_cost:       props.item.unit_cost,
     expiration_date: props.item.expiration_date ?? '',
   };
-  saveErr.value = null;
+  saveErr.value  = null;
   showEdit.value = true;
 }
 
 async function confirmDelete() {
-  deleting.value = true;
+  deleting.value  = true;
   deleteErr.value = null;
   try {
     await store.deleteBatch(props.item.batch_id);
@@ -43,15 +43,16 @@ async function confirmDelete() {
 }
 
 async function saveEdit() {
-  saving.value = true;
+  saving.value  = true;
   saveErr.value = null;
   try {
     await store.updateBatch(props.item.batch_id, {
       qty_remaining:   editForm.value.qty_remaining,
       unit_cost:       editForm.value.unit_cost,
       expiration_date: editForm.value.expiration_date || null,
-      user_id: authStore.user?.id ? String(authStore.user.id) : null});
-      showEdit.value = false;
+      user_id:         authStore.user?.id ? String(authStore.user.id) : null,
+    });
+    showEdit.value = false;
   } catch {
     saveErr.value = 'Failed to save. Try again.';
   } finally {
@@ -175,7 +176,7 @@ function badgeDot() {
       </div>
     </div>
 
-    <!-- Edit Modal — inside root div, alongside the card -->
+    <!-- Edit Modal -->
     <q-dialog v-model="showEdit">
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div class="flex items-center justify-between mb-5">
@@ -230,6 +231,5 @@ function badgeDot() {
         </div>
       </div>
     </q-dialog>
-
   </div>
 </template>
