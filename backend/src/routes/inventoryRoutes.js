@@ -23,3 +23,6 @@ router.get('/activity-log', inventoryController.getActivityLog);
 
 router.get('/dashboard', inventoryController.getDashboardStats);
 router.put('/batch/:batch_id',    inventoryController.updateBatch);
+
+router.get('/financial-alerts', inventoryController.getFinancialAlerts);
+router.put('/financial-alerts/:alert_id/read', inventoryController.markAlertRead);

@@ -1,8 +1,8 @@
 {
-  "name": "PantryPilotDashboard",
+  "name": "InventoryPilotDashboard",
   "version": "0.0.1",
   "description": "A Quasar Project",
-  "productName": "Pantry Pilot",
+  "productName": "Inventory Pilot",
   "author": "C00kieBordie <georgesjnawfal@gmail.com>",
   "type": "module",
   "private": true,

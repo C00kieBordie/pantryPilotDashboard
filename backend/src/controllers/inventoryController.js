@@ -331,3 +331,52 @@ exports.updateBatch = async (req, res) => {
     return res.status(500).json({ error: 'Failed to update batch.', details: error.message });
   }
 };
+
+exports.getFinancialAlerts = async (req, res) => {
+  try {
+    const { data, error } = await tenantSupabase
+      .from('financial_alerts')
+      .select(`
+        alert_id,
+        batch_id,
+        alert_type,
+        monetary_risk_value,
+        triggered_at,
+        status,
+        date_read,
+        read_by
+      `)
+      .order('triggered_at', { ascending: false });
+
+    if (error) throw error;
+
+    return res.status(200).json({ alerts: data });
+  } catch (error) {
+    console.error('Financial Alerts Error:', error);
+    return res.status(500).json({ error: 'Failed to fetch financial alerts.', details: error.message });
+  }
+};
+
+exports.markAlertRead = async (req, res) => {
+  try {
+    const { alert_id } = req.params;
+    const { user_id } = req.body;
+
+    const { data, error } = await tenantSupabase
+      .from('financial_alerts')
+      .update({ 
+        status:    'resolved',  // was 'read'
+        date_read: new Date().toISOString(), 
+        read_by:   user_id 
+      })
+      .eq('alert_id', alert_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.status(200).json({ message: 'Alert marked as resolved.', alert: data });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to update alert.', details: error.message });
+  }
+};

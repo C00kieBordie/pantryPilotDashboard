@@ -133,12 +133,7 @@ function badgeDot() {
           </span>
           <span class="text-sm font-semibold text-gray-800">{{ item.expiration_date ?? '—' }}</span>
         </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-400 flex items-center gap-1.5">
-            <span class="material-icons text-sm">source</span>Source
-          </span>
-          <span class="text-sm font-semibold text-gray-800">{{ item.expiration_source ?? '—' }}</span>
-        </div>
+        
       </div>
 
       <!-- Banners -->

@@ -20,6 +20,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'InventoryManagement', component: () => import('pages/InventoryManagement.vue') },
       { path: 'ActivityLog', component: () => import('pages/ActivityLog.vue') },
       { path: 'UserCenter', component: () => import('pages/UserCenter.vue') },
+      { path: 'FinancialAlert', component: () => import('pages/FinancialAlerts.vue') },
 
     ]
   },

@@ -28,6 +28,11 @@ const linksList: EssentialLinkProps[] = [
     icon: 'person',
     link: '/admin/UserCenter',
   },
+  {
+    title: 'Financial Alert History',
+    icon: 'hourglass_empty',
+    link: '/admin/FInancialAlert',
+  },
 ];
 
 const leftDrawerOpen = ref(false);
@@ -53,7 +58,7 @@ function logout(){
     <q-header elevated>
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-        <q-toolbar-title> Pantry Pilot </q-toolbar-title>
+        <q-toolbar-title> Inventory Pilot </q-toolbar-title>
         <q-btn flat round dense icon="logout" v-if="authStore.token" @click="logout"/>
         
       </q-toolbar>
